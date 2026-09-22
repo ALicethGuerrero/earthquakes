@@ -29,6 +29,12 @@ flowchart TB
 
 El diagrama visual complementario está disponible en [diagrama_componentes.png](diagrama_componentes.png). El diagrama Mermaid anterior refleja el flujo ejecutado por `docker compose`.
 
+## Analítica avanzada (N4)
+
+La propuesta N4 está documentada en [propuesta N4.md](propuesta%20N4.md). Plantea separar la capa operativa de MongoDB de una capa analítica basada en Azure, con Event Hubs, ADLS Gen2, Parquet/Delta Lake, Databricks o Synapse, Power BI y Azure Machine Learning.
+
+Esta arquitectura es una propuesta de evolución para históricos, procesamiento near real-time, dashboards y datasets de Machine Learning; el despliegue local validado en este repositorio corresponde a la capa operativa con MongoDB, Airflow, Redis y FastAPI.
+
 ## Ejecución
 
 1. Copiar `.env.example` a `.env`.
@@ -44,7 +50,7 @@ Redis se utiliza como canal compartido para entregar eventos a los clientes WebS
 
 ## Dependencias y entorno local
 
-El proyecto usa `pyproject.toml` como manifiesto y `uv.lock` para reproducir la resolución exacta de dependencias. `uv` es el gestor recomendado para este repositorio; `requirements.txt` no se mantiene en paralelo.
+El proyecto usa `pyproject.toml` como manifiesto y `uv.lock` para reproducir la resolución exacta de dependencias. `uv` es el gestor recomendado para este repositorio
 
 ```bash
 uv sync
