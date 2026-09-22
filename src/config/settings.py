@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     mongo_uri: str = Field(default="mongodb://localhost:27017", validation_alias="MONGO_URI")
     mongo_database: str = Field(default="earthquakes", validation_alias="MONGO_DATABASE")
+    redis_uri: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URI")
     usgs_api_url: str = Field(
         default="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson",
         validation_alias="USGS_API_URL",

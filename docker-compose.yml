@@ -13,16 +13,28 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   api:
     build: .
     command: sh -c 'exec uvicorn src.api.main:app --host "$$API_HOST" --port "$$API_PORT"'
     env_file: .env
     environment:
       MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017}
+      REDIS_URI: ${REDIS_URI:-redis://redis:6379/0}
     ports:
       - "${API_PUBLIC_PORT:-8000}:${API_PORT:-8000}"
     depends_on:
       mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   ingestion:
@@ -31,8 +43,11 @@ services:
     env_file: .env
     environment:
       MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017}
+      REDIS_URI: ${REDIS_URI:-redis://redis:6379/0}
     depends_on:
       mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   airflow-init:
