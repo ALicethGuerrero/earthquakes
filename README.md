@@ -5,15 +5,29 @@ Plataforma desacoplada para consumir eventos sísmicos de USGS, almacenarlos en 
 ## Arquitectura
 
 ```mermaid
-flowchart LR
-    USGS[USGS Earthquake API] --> ING[Ingestion Service\nCada 3 minutos]
-    ING --> M[(MongoDB)]
-    ING --> R[(Redis Pub/Sub)]
-    M --> API[FastAPI REST API]
-    R --> API
-    M --> DAG[Airflow DAG\nCada hora]
-    DAG --> M
+flowchart TB
+    USGS[USGS Earthquake API\nall_hour.geojson] --> ING
+
+    subgraph COMPOSE[Docker Compose]
+        ING[Servicio de ingesta\nCada 3 minutos]
+        API[FastAPI\nREST y WebSocket]
+        M[(MongoDB\nearthquakes\nmetrics\nhourly_reports)]
+        R[(Redis Pub/Sub\ncanal earthquakes)]
+        AIRFLOW[Airflow Scheduler\nDAG cada hora]
+    end
+
+    ING -->|upsert event_id| M
+    ING -->|publica eventos nuevos| R
+    API -->|consulta| M
+    R -->|entrega eventos| API
+    AIRFLOW -->|lee eventos| M
+    AIRFLOW -->|persiste reportes| M
+
+    CLIENT[Cliente HTTP / Postman / Swagger] --> API
+    WS[Cliente WebSocket] -->|/ws/earthquakes| API
 ```
+
+El diagrama visual complementario está disponible en [diagrama_componentes.png](diagrama_componentes.png). El diagrama Mermaid anterior refleja el flujo ejecutado por `docker compose`.
 
 ## Ejecución
 
@@ -54,6 +68,7 @@ uv sync
 - `GET /metrics`: métricas por ventana UTC `YYYY-MM-DDTHH`.
 - `GET /reports`: reportes horarios persistidos.
 - `GET /prometheus`: métricas técnicas de FastAPI.
+- `WS /ws/earthquakes`: eventos nuevos publicados mediante Redis Pub/Sub.
 
 La ruta `/prometheus` se usa para evitar el conflicto entre el endpoint funcional `/metrics` exigido por la prueba y el endpoint de instrumentación de Prometheus.
 
