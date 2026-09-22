@@ -64,7 +64,7 @@ def recalculate_window(database: MongoDatabase, window: str) -> dict[str, Any]:
         {
             "$set": {
                 "window": "$_id",
-                "average_magnitude": {
+                "avg_magnitude": {
                     "$cond": [
                         {"$gt": ["$magnitude_count", 0]},
                         {"$divide": ["$magnitude_sum", "$magnitude_count"]},
@@ -93,7 +93,7 @@ def recalculate_window(database: MongoDatabase, window: str) -> dict[str, Any]:
     metric = {
         "window": window,
         "earthquake_count": 0,
-        "average_magnitude": None,
+        "avg_magnitude": None,
         "max_magnitude": None,
         "magnitude_distribution": {},
         "updated_at": datetime.now(timezone.utc),

@@ -66,4 +66,4 @@ def test_recalculate_window_month_boundary(monkeypatch):
     metric = recalculate_window(db, "2026-01-31T23")
     assert metric["window"] == "2026-01-31T23"
     assert metric["earthquake_count"] == 0
-    assert metric["average_magnitude"] is None
+    assert metric["avg_magnitude"] is None
