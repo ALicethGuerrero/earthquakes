@@ -1,0 +1,14 @@
+{
+  "info": {
+    "name": "Earthquake Events API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{"key": "base_url", "value": "http://localhost:8000", "description": "Use the API_PUBLIC_PORT value when the Windows published port changes."}],
+  "item": [
+    {"name": "Health", "request": {"method": "GET", "url": "{{base_url}}/health"}},
+    {"name": "Earthquakes", "request": {"method": "GET", "url": "{{base_url}}/earthquakes?limit=20&sort_by=event_time&order=desc"}},
+    {"name": "Metrics", "request": {"method": "GET", "url": "{{base_url}}/metrics"}},
+    {"name": "Reports", "request": {"method": "GET", "url": "{{base_url}}/reports"}},
+    {"name": "Prometheus", "request": {"method": "GET", "url": "{{base_url}}/prometheus"}}
+  ]
+}
