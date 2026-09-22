@@ -4,6 +4,16 @@ Plataforma desacoplada para consumir eventos sísmicos de USGS, almacenarlos en 
 
 ## Arquitectura
 
+```mermaid
+flowchart LR
+    USGS[USGS Earthquake API] --> ING[Ingestion Service\nCada 3 minutos]
+    ING --> M[(MongoDB)]
+    ING --> R[(Redis Pub/Sub)]
+    M --> API[FastAPI REST API]
+    R --> API
+    M --> DAG[Airflow DAG\nCada hora]
+    DAG --> M
+```
 
 ## Ejecución
 
@@ -15,15 +25,24 @@ Plataforma desacoplada para consumir eventos sísmicos de USGS, almacenarlos en 
 
 `API_HOST` y `API_PORT` controlan la escucha de Uvicorn dentro del contenedor; `API_PUBLIC_PORT` controla el puerto de Windows. La colección de Postman usa su propia variable `base_url`, cuyo valor predeterminado es `http://localhost:8000`; actualízala si cambias `API_PUBLIC_PORT`.
 
+La primera ejecución de Airflow puede tardar mientras crea su base SQLite local e instala las dependencias adicionales del DAG.
+Redis se utiliza como canal compartido para entregar eventos a los clientes WebSocket entre contenedores.
 
 ## Dependencias y entorno local
 
-El proyecto usa `pyproject.toml` como manifiesto y `uv.lock` para reproducir la resolución exacta de dependencias. `uv` como gestor
+El proyecto usa `pyproject.toml` como manifiesto y `uv.lock` para reproducir la resolución exacta de dependencias. `uv` es el gestor recomendado para este repositorio; `requirements.txt` no se mantiene en paralelo.
 
 ```bash
 uv sync
 uv run pytest
 uv run python -m compileall -q src ingestion.py airflow tests
+```
+
+Para actualizar la resolución después de cambiar dependencias:
+
+```bash
+uv lock
+uv sync
 ```
 
 ## Endpoints
@@ -38,30 +57,17 @@ uv run python -m compileall -q src ingestion.py airflow tests
 
 La ruta `/prometheus` se usa para evitar el conflicto entre el endpoint funcional `/metrics` exigido por la prueba y el endpoint de instrumentación de Prometheus.
 
-## Levantar la infraestructura con Docker
-   ```bash
-   docker compose up --build -d
-   ```
-   - La API estará disponible en `http://localhost:<API_PUBLIC_PORT>/docs`.
-   - Airflow estará disponible en `http://localhost:<AIRFLOW_PORT>` (credenciales admin en `.env`).
-**Verificar que el DAG se haya cargado** en la UI de Airflow y que la primera ejecución (programada cada hora) se complete sin errores.
-**Ejecutar la suite de pruebas contra la base de datos real (opcional)**:
-   ```bash
-   uv run pytest -q
-   ```
-**Detener la infraestructura**:
-   ```bash
-   docker compose down
-   ```
-
 ## Diseño de datos
 
-* `earthquakes` usa `event_id` como índice único. 
-* La ingesta usa `replace_one(..., upsert=True)`, por lo que repetir una respuesta de USGS no crea duplicados. Tras insertar o actualizar un evento, se recalcula únicamente su ventana UTC mediante agregación de MongoDB.
+`earthquakes` usa `event_id` como índice único. La ingesta usa `replace_one(..., upsert=True)`, por lo que repetir una respuesta de USGS no crea duplicados. Tras insertar o actualizar un evento, se recalculan únicamente sus ventanas UTC mediante una agregación de MongoDB.
 
-* `metrics` tiene una fila por ventana horaria y contiene cantidad, promedio, máximo y distribución (`<3`, `3-5`, `5-7`, `>=7`). 
-* `hourly_reports` tiene una fila por hora cerrada y conserva las tres ubicaciones más frecuentes, extrayendo el texto posterior a `of`.
+`metrics` tiene una fila por ventana horaria y contiene cantidad, promedio, máximo y distribución (`<3`, `3-5`, `5-7`, `>=7`). `hourly_reports` tiene una fila por hora cerrada y conserva las tres ubicaciones más frecuentes, extrayendo el texto posterior a `of`.
 
 ## Validación local
+
+```bash
+python -m compileall -q src ingestion.py airflow tests
+pytest
+```
 
 La colección Postman está en `postman/earthquake-api.postman_collection.json`.
