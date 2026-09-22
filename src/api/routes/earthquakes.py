@@ -1,14 +1,15 @@
 from datetime import datetime
 from typing import Any
-
-from fastapi import APIRouter, Query, Request
-
+from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi_cache.decorator import cache
+from src.config.cache_config import CACHE_TTL
 from src.metadata.schemas import EarthquakeResponse, PaginationParams, serialize_document
 
 router = APIRouter(prefix="/earthquakes", tags=["earthquakes"])
 
 
 @router.get("", response_model=list[EarthquakeResponse])
+@cache(expire=CACHE_TTL)
 def list_earthquakes(
     request: Request,
     skip: int = Query(0, ge=0),
@@ -38,8 +39,11 @@ def list_earthquakes(
         if params.end_date:
             filters["event_time"]["$lte"] = params.end_date
     direction = -1 if params.order == "desc" else 1
+    database = request.app.state.database
+    if database is None:
+        raise HTTPException(status_code=503, detail="MongoDB no disponible")
     cursor = (
-        request.app.state.database.earthquakes.find(filters)
+        database.earthquakes.find(filters)
         .sort(params.sort_by, direction)
         .skip(params.skip)
         .limit(params.limit)
