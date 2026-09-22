@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from airflow import DAG
+import logging
 from airflow.operators.python import PythonOperator, get_current_context
 
 from src.config.settings import get_settings

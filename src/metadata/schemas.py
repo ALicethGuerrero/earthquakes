@@ -1,35 +1,11 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
-
-class EarthquakeResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    event_id: str
-    magnitude: float | None
-    location: str
-    latitude: float
-    longitude: float
-    depth: float
-    event_time: datetime
-
-
-class MetricResponse(BaseModel):
-    window: str
-    earthquake_count: int
-    average_magnitude: float | None
-    max_magnitude: float | None
-    magnitude_distribution: dict[str, int] = Field(default_factory=dict)
-
-
-class ReportResponse(BaseModel):
-    report_date: datetime
-    total_events: int
-    average_magnitude: float | None
-    max_magnitude: float | None
-    top_locations: list[str]
+from src.models.earthquake import EarthquakeResponse
+from src.models.metric import MetricResponse
+from src.models.report import ReportResponse
 
 
 class PaginationParams(BaseModel):
@@ -50,3 +26,13 @@ class HealthResponse(BaseModel):
 def serialize_document(document: dict[str, Any]) -> dict[str, Any]:
     document.pop("_id", None)
     return document
+
+
+__all__ = [
+    "EarthquakeResponse",
+    "MetricResponse",
+    "ReportResponse",
+    "PaginationParams",
+    "HealthResponse",
+    "serialize_document",
+]

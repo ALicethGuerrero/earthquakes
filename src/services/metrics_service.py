@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from src.database.mongodb import MongoDatabase
@@ -22,7 +22,7 @@ def hour_window(event_time: datetime) -> str:
 
 def recalculate_window(database: MongoDatabase, window: str) -> dict[str, Any]:
     start = datetime.fromisoformat(f"{window}:00:00+00:00")
-    end = start.replace(hour=start.hour + 1) if start.hour < 23 else start.replace(day=start.day + 1, hour=0)
+    end = start + timedelta(hours=1)
     pipeline = [
         {"$match": {"event_time": {"$gte": start, "$lt": end}}},
         {

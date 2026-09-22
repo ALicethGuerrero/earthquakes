@@ -14,10 +14,13 @@ if __name__ == "__main__":
     settings = get_settings()
     database = MongoDatabase(settings)
     database.ensure_indexes()
-    client = UsgsClient(settings.usgs_api_url)
-    while True:
-        try:
-            ingest_once(client, database)
-        except Exception:
-            logger.exception("USGS ingestion failed")
-        time.sleep(settings.ingestion_interval_seconds)
+    try:
+        with UsgsClient(settings.usgs_api_url) as client:
+            while True:
+                try:
+                    ingest_once(client, database)
+                except Exception:
+                    logger.exception("USGS ingestion failed")
+                time.sleep(settings.ingestion_interval_seconds)
+    finally:
+        database.close()
